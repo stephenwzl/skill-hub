@@ -11,7 +11,6 @@ A self-hosted experience skill pool for AI agents and teams. Store, search, and 
 - **SKILL.md Standard** — Skills follow the [Agent Skills open standard](https://github.com/RiverOnVenus/agent-skills-standard) with YAML frontmatter, fully editable in any text editor
 - **Hybrid Search** — Keyword + vector embedding search powered by a local ONNX model (multilingual-e5-small, 384-dim) with sqlite-vec acceleration
 - **Agent-Native APIs** — Plain-text endpoints designed for AI agent consumption; built-in skill packs for Claude Code / Codex auto-query and auto-submit
-- **LLM-Powered Matching** — Semantic skill matching and automatic skill compaction via OpenAI-compatible LLM APIs
 - **ZIP Import / Export** — Share skills as `.zip` archives containing `SKILL.md` + `scripts/` + `references/` + `assets/`
 - **Filesystem-First Storage** — Full content lives on disk (`data/skills/{scope}/{slug}/SKILL.md`); database stores metadata and search summaries; auto-sync on startup
 - **Scope-Based Permissions** — `@domain/skill` for team knowledge, `@username/skill` for personal notes; domain owners manage shared scopes
@@ -32,13 +31,7 @@ npm install
 
 ### 2. Configure
 
-Edit `.env.local` — at minimum, set your LLM API key (used for semantic matching and skill compaction):
-
-```bash
-LLM_BASE_URL=https://api.openai.com/v1
-LLM_API_KEY=sk-your-api-key
-LLM_MODEL=gpt-4o-mini
-```
+Edit `.env.local` if needed. The defaults work out of the box — no external API keys required:
 
 > The embedding model runs **locally** (Xenova/multilingual-e5-small via ONNX Runtime). No API key needed for search.
 
@@ -162,8 +155,6 @@ These endpoints return `text/plain` — designed for AI agent consumption:
 | Endpoint | Method | Auth | Description |
 | --- | --- | --- | --- |
 | `/api/skills/submit` | POST | Required | Quick submit (problem + solution) |
-| `/api/skills/query` | POST | - | LLM-powered semantic matching |
-| `/api/skills/compact` | POST | Domain Owner | LLM-powered skill compaction |
 | `/api/skills/import` | POST | Required | Import skill from ZIP |
 | `/api/skills/export/[...id]` | GET | - | Export skill as ZIP |
 | `/api/stats` | GET | - | System statistics |
@@ -219,9 +210,6 @@ curl -X POST http://localhost:3000/api/skills/submit \
 
 | Variable | Default | Description |
 | --- | --- | --- |
-| `LLM_BASE_URL` | — | OpenAI-compatible API base URL |
-| `LLM_API_KEY` | — | API key for LLM service |
-| `LLM_MODEL` | `gpt-4o-mini` | Model name for semantic matching |
 | `SKILL_HUB_DB_PATH` | `data/skill-hub.sqlite` | SQLite database path |
 | `SKILL_HUB_SKILLS_DIR` | `data/skills` | Skill files directory |
 | `SQLITE_VEC_PATH` | auto | Path to sqlite-vec extension |
@@ -238,7 +226,6 @@ curl -X POST http://localhost:3000/api/skills/submit \
 - **Next.js 16** (App Router) + **React 19**
 - **SQLite** via better-sqlite3 + **sqlite-vec** for vector search
 - **ONNX Runtime** — multilingual-e5-small (384-dim) embedding model runs locally
-- **Vercel AI SDK** — OpenAI-compatible LLM integration
 - **Tailwind CSS 4** + **shadcn/ui** for the frontend
 - **gray-matter** for SKILL.md frontmatter parsing
 - **adm-zip** for ZIP import/export
@@ -256,7 +243,6 @@ skill-hub/
 │   ├── auth/              # Authentication & permissions
 │   ├── db/                # SQLite client & schema
 │   ├── embeddings/        # Embedding model, vector store, search
-│   ├── llm/               # LLM client, skill matching, compaction
 │   ├── skills/            # Core skill logic (storage, fs, frontmatter, sync)
 │   └── install/           # Agent install prompt content
 ├── skills/                # Built-in skill packs (query + submit)

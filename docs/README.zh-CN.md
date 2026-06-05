@@ -11,7 +11,6 @@
 - **SKILL.md 标准** — 技能遵循 [Agent Skills 开放标准](https://github.com/RiverOnVenus/agent-skills-standard)，使用 YAML frontmatter 格式，任何文本编辑器均可直接编辑
 - **混合搜索** — 关键词 + 向量嵌入搜索，基于本地 ONNX 模型（multilingual-e5-small，384 维），sqlite-vec 加速
 - **Agent 原生 API** — 纯文本端点专为 AI Agent 消费设计；内置 Claude Code / Codex 自动查询和自动提交技能包
-- **LLM 语义匹配** — 通过 OpenAI 兼容的 LLM API 实现语义技能匹配和自动技能合并
 - **ZIP 导入/导出** — 以 `.zip` 归档分享技能，包含 `SKILL.md` + `scripts/` + `references/` + `assets/`
 - **文件系统优先存储** — 完整内容存于磁盘（`data/skills/{scope}/{slug}/SKILL.md`）；数据库存储元数据和搜索摘要；启动时自动同步
 - **Scope 权限模型** — `@domain/skill` 用于团队知识，`@username/skill` 用于个人笔记；Domain Owner 管理共享 scope
@@ -32,13 +31,7 @@ npm install
 
 ### 2. 配置
 
-编辑 `.env.local` — 至少设置 LLM API Key（用于语义匹配和技能合并）：
-
-```bash
-LLM_BASE_URL=https://api.openai.com/v1
-LLM_API_KEY=sk-your-api-key
-LLM_MODEL=gpt-4o-mini
-```
+编辑 `.env.local`（如需自定义）。默认配置开箱即用，无需外部 API Key：
 
 > 嵌入模型**本地运行**（Xenova/multilingual-e5-small，通过 ONNX Runtime）。搜索功能无需 API Key。
 
@@ -162,8 +155,6 @@ React 组件抛出未处理的错误会导致整个 UI 崩溃...
 | 端点 | 方法 | 认证 | 说明 |
 | --- | --- | --- | --- |
 | `/api/skills/submit` | POST | 需要 | 快速提交（problem + solution） |
-| `/api/skills/query` | POST | 无 | LLM 语义匹配 |
-| `/api/skills/compact` | POST | Domain Owner | LLM 技能合并 |
 | `/api/skills/import` | POST | 需要 | 从 ZIP 导入技能 |
 | `/api/skills/export/[...id]` | GET | 无 | 导出技能为 ZIP |
 | `/api/stats` | GET | 无 | 系统统计 |
@@ -219,9 +210,6 @@ curl -X POST http://localhost:3000/api/skills/submit \
 
 | 变量 | 默认值 | 说明 |
 | --- | --- | --- |
-| `LLM_BASE_URL` | — | OpenAI 兼容 API 基础 URL |
-| `LLM_API_KEY` | — | LLM 服务 API Key |
-| `LLM_MODEL` | `gpt-4o-mini` | 语义匹配使用的模型名 |
 | `SKILL_HUB_DB_PATH` | `data/skill-hub.sqlite` | SQLite 数据库路径 |
 | `SKILL_HUB_SKILLS_DIR` | `data/skills` | 技能文件目录 |
 | `SQLITE_VEC_PATH` | 自动检测 | sqlite-vec 扩展路径 |
@@ -238,7 +226,6 @@ curl -X POST http://localhost:3000/api/skills/submit \
 - **Next.js 16**（App Router）+ **React 19**
 - **SQLite**（better-sqlite3）+ **sqlite-vec** 向量搜索
 - **ONNX Runtime** — multilingual-e5-small（384 维）嵌入模型本地运行
-- **Vercel AI SDK** — OpenAI 兼容 LLM 集成
 - **Tailwind CSS 4** + **shadcn/ui** 前端
 - **gray-matter** SKILL.md frontmatter 解析
 - **adm-zip** ZIP 导入/导出
@@ -256,7 +243,6 @@ skill-hub/
 │   ├── auth/              # 认证与权限
 │   ├── db/                # SQLite 客户端与 Schema
 │   ├── embeddings/        # 嵌入模型、向量存储、搜索
-│   ├── llm/               # LLM 客户端、技能匹配、合并
 │   ├── skills/            # 核心技能逻辑（storage, fs, frontmatter, sync）
 │   └── install/           # Agent 安装提示内容
 ├── skills/                # 内置技能包（query + submit）

@@ -11,7 +11,6 @@ import type {
   SkillQueryResult,
   SkillCreateInput,
   SkillUpdateInput,
-  SkillCompactPlan,
   SkillScopeSummary,
   SkillFileReference,
 } from "./types";
@@ -533,104 +532,6 @@ export async function incrementUsageCount(id: string): Promise<void> {
   getDb()
     .prepare("UPDATE skills SET usage_count = usage_count + 1, updated_at = ? WHERE id = ?")
     .run(now, id);
-}
-
-export async function mergeSkills(
-  plan: SkillCompactPlan
-): Promise<{ targetSkillId: string; deprecatedSkillIds: string[] } | null> {
-  await ensureDb();
-  const targetRow = getDb().prepare("SELECT * FROM skills WHERE id = ?").get(plan.targetSkillId) as SkillRow | undefined;
-  if (!targetRow) return null;
-
-  const now = new Date().toISOString();
-  let mergedUsageCount = targetRow.usage_count;
-  const deprecatedSkillIds: string[] = [];
-  const targetFiles = readAllSkillFiles(plan.targetSkillId);
-  const targetMetadata: SkillMetadata = {
-    ...rowToMetadata(targetRow),
-    name: plan.name,
-    domain: plan.domain,
-    tags: plan.tags,
-    description: plan.description,
-    usageCount: mergedUsageCount,
-    version: targetRow.version + 1,
-    updatedAt: now,
-  };
-
-  for (const sourceId of plan.sourceSkillIds) {
-    if (sourceId === plan.targetSkillId) continue;
-    const sourceRow = getDb()
-      .prepare("SELECT usage_count FROM skills WHERE id = ?")
-      .get(sourceId) as { usage_count: number } | undefined;
-    if (sourceRow) mergedUsageCount += sourceRow.usage_count;
-  }
-
-  targetMetadata.usageCount = mergedUsageCount;
-
-  // Write merged content to filesystem
-  const frontmatter: SkillMdFrontmatter = {
-    name: plan.name,
-    description: plan.description,
-    license: targetRow.license || undefined,
-    metadata: {
-      domain: plan.domain,
-      tags: plan.tags,
-      author: targetRow.author,
-      source: (targetRow.source || "manual") as SkillMdFrontmatter["metadata"]["source"],
-      version: targetRow.version + 1,
-    },
-  };
-  writeSkillFiles(plan.targetSkillId, frontmatter, plan.content);
-
-  const contentHash = computeContentHash(plan.content);
-  const contentSummary = generateContentSummary(plan.content);
-  const targetEmbeddingFingerprint = computeEmbeddingFingerprint(targetMetadata, plan.content, targetFiles);
-
-  const db = getDb();
-  const apply = db.transaction(() => {
-    db.prepare(`
-      UPDATE skills
-      SET name = ?, domain = ?, tags_json = ?, description = ?,
-          content_summary = ?, content_hash = ?,
-          usage_count = ?, version = ?, embedding_fingerprint = ?, updated_at = ?
-      WHERE id = ?
-    `).run(
-      plan.name, plan.domain, JSON.stringify(plan.tags), plan.description,
-      contentSummary, contentHash,
-      mergedUsageCount, targetRow.version + 1, targetEmbeddingFingerprint, now, plan.targetSkillId
-    );
-
-    for (const sourceId of plan.sourceSkillIds) {
-      if (sourceId === plan.targetSkillId) continue;
-      const source = db.prepare("SELECT * FROM skills WHERE id = ?").get(sourceId) as SkillRow | undefined;
-      if (!source) continue;
-      const sourceFiles = readAllSkillFiles(sourceId);
-      const sourceEmbeddingFingerprint = computeEmbeddingFingerprint(
-        { ...rowToMetadata(source), status: SKILL_STATUS.DEPRECATED, updatedAt: now },
-        source.content_summary,
-        sourceFiles
-      );
-      const result = db
-        .prepare("UPDATE skills SET status = ?, embedding_fingerprint = ?, updated_at = ? WHERE id = ?")
-        .run(SKILL_STATUS.DEPRECATED, sourceEmbeddingFingerprint, now, sourceId);
-      if (result.changes > 0) deprecatedSkillIds.push(sourceId);
-    }
-  });
-  apply();
-
-  notifyEmbeddingCacheInvalidated();
-  return { targetSkillId: plan.targetSkillId, deprecatedSkillIds };
-}
-
-export async function getActiveSkillsForMatching(scopePrefix?: string): Promise<
-  Pick<SkillMetadata, "id" | "name" | "domain" | "tags" | "description">[]
-> {
-  await ensureDb();
-  const rows = listSkillRows({ status: SKILL_STATUS.ACTIVE });
-  return rows
-    .map(rowToMetadata)
-    .filter((meta) => !scopePrefix || meta.id.startsWith(scopePrefix))
-    .map(({ id, name, domain, tags, description }) => ({ id, name, domain, tags, description }));
 }
 
 export async function getStats() {

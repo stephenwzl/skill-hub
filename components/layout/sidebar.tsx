@@ -9,17 +9,14 @@ import {
   Sparkles,
   Download,
   ShieldCheck,
-  WandSparkles,
   UserCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { AuthUser } from "@/lib/auth/types";
-import type { Domain } from "@/lib/skills/types";
 
 const navItems = [
   { href: "/dashboard", label: "工作台", icon: Home },
   { href: "/skills", label: "搜索", icon: Search },
-  { href: "/compact", label: "技能 Compact", icon: WandSparkles, ownerOrAdminOnly: true },
   { href: "/admin", label: "系统管理", icon: ShieldCheck, adminOnly: true },
   { href: "/install", label: "安装 skill hub", icon: Download },
   { href: "/profile", label: "个人面板", icon: UserCircle },
@@ -28,18 +25,15 @@ const navItems = [
 export function Sidebar() {
   const pathname = usePathname();
   const [user, setUser] = useState<AuthUser | null>(null);
-  const [ownedDomains, setOwnedDomains] = useState<Domain[]>([]);
 
   useEffect(() => {
     fetch("/api/auth/me")
       .then((res) => res.json())
       .then((data) => {
         setUser(data.user ?? null);
-        setOwnedDomains(data.ownedDomains ?? []);
       })
       .catch(() => {
         setUser(null);
-        setOwnedDomains([]);
       });
   }, []);
 
@@ -55,9 +49,6 @@ export function Sidebar() {
       <nav className="flex flex-col gap-1 p-3">
         {navItems.filter((item) => {
           if (item.adminOnly) return user?.role === "admin";
-          if (item.ownerOrAdminOnly) {
-            return user?.role === "admin" || ownedDomains.length > 0;
-          }
           return true;
         }).map((item) => {
           const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);

@@ -6,7 +6,6 @@ import { UserStatus } from "@/components/auth/user-status";
 const pageTitles: Record<string, string> = {
   "/dashboard": "工作台",
   "/skills": "技能库",
-  "/compact": "技能 Compact",
   "/admin": "系统管理",
   "/install": "安装 skill hub",
   "/login": "登录",

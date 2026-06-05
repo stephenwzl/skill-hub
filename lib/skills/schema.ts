@@ -45,11 +45,6 @@ export const skillUpdateSchema = z.object({
   assets: z.array(skillFileReferenceSchema).optional(),
 });
 
-export const skillQuerySchema = z.object({
-  query: z.string().min(1, "Query is required"),
-  topK: z.number().min(1).max(20).default(5),
-});
-
 export const skillSubmitSchema = z.object({
   problem: z.string().min(1, "Problem is required"),
   solution: z.string().min(1, "Solution is required"),
@@ -70,8 +65,3 @@ export const skillAgentFetchSchema = z.object({
   ids: z.array(z.string().min(1)).min(1, "At least one skill ID required").max(20, "Max 20 skills per request"),
 });
 
-export const skillCompactSchema = z.object({
-  domain: z.enum(DOMAINS, { message: "Invalid domain" }),
-  skillIds: z.array(z.string().min(1)).min(2).optional(),
-  dryRun: z.boolean().default(true),
-});

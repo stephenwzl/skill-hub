@@ -110,13 +110,6 @@ export interface SkillUpdateInput {
   assets?: SkillFileReference[];
 }
 
-export interface SkillMatchResult {
-  skillId: string;
-  skillName: string;
-  relevance: number; // 0-1
-  reason: string;
-}
-
 export interface SkillSubmission {
   problem: string;
   solution: string;
@@ -137,26 +130,6 @@ export interface SkillSubmissionResult {
   action: "created" | "updated";
   skillId: string;
   skillName: string;
-}
-
-export interface SkillCompactPlan {
-  targetSkillId: string;
-  sourceSkillIds: string[];
-  name: string;
-  domain: Domain;
-  tags: string[];
-  description: string;
-  content: string;
-  reason: string;
-}
-
-export interface SkillCompactResult {
-  dryRun: boolean;
-  plans: SkillCompactPlan[];
-  executed: Array<{
-    targetSkillId: string;
-    deprecatedSkillIds: string[];
-  }>;
 }
 
 // Re-export frontmatter types for convenience
