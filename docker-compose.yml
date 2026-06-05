@@ -1,0 +1,18 @@
+services:
+  skill-hub:
+    build:
+      context: .
+    container_name: skill-hub
+    restart: unless-stopped
+    env_file:
+      - .env.local
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      HOSTNAME: 0.0.0.0
+      COOKIE_SECURE: "false"
+      SELF_HOSTED: "true"
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./data:/app/data
